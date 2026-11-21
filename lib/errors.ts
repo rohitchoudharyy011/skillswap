@@ -1,3 +1,5 @@
+import { isSupabaseConfigured } from '@/lib/supabase/client';
+
 interface ErrorLike {
   message?: string;
   code?: string;
@@ -5,6 +7,8 @@ interface ErrorLike {
   name?: string;
 }
 
+const NOT_CONFIGURED_MESSAGE =
+  'The database connection is not set up for this app yet. Reconnect the database in your project settings and try again.';
 const NETWORK_MESSAGE = 'Network problem. Check your connection and try again.';
 const GENERIC_MESSAGE = 'Something went wrong. Please try again.';
 
@@ -16,6 +20,7 @@ export function describeAuthError(error: unknown): string {
   const e = (error ?? {}) as ErrorLike;
   const message = (e.message ?? '').toLowerCase();
 
+  if (!isSupabaseConfigured) return NOT_CONFIGURED_MESSAGE;
   if (isNetworkFailure(e, message)) return NETWORK_MESSAGE;
   if (message.includes('invalid login credentials')) return 'Email or password is incorrect.';
   if (message.includes('already registered') || message.includes('already been registered')) {
@@ -33,6 +38,7 @@ export function describeDataError(error: unknown): string {
   const e = (error ?? {}) as ErrorLike;
   const message = (e.message ?? '').toLowerCase();
 
+  if (!isSupabaseConfigured) return NOT_CONFIGURED_MESSAGE;
   if (isNetworkFailure(e, message)) return NETWORK_MESSAGE;
   switch (e.code) {
     case '23505':
