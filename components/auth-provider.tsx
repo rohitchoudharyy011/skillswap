@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { fetchProfile } from '@/lib/queries';
 import type { Profile } from '@/lib/types';
@@ -29,19 +29,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
-        const nextUser = session?.user ?? null;
-        setUser(nextUser);
-        if (nextUser) {
-          await loadProfile(nextUser.id);
-        } else {
-          setProfile(null);
-        }
-        setLoading(false);
-      })();
+    let active = true;
+
+    const applySession = async (session: Session | null) => {
+      if (!active) return;
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      if (nextUser) {
+        await loadProfile(nextUser.id);
+      } else {
+        setProfile(null);
+      }
+      if (active) setLoading(false);
+    };
+
+    // getSession covers the case where the INITIAL_EVENT never fires (blocked storage, iframe sandboxes).
+    supabase.auth
+      .getSession()
+      .then(({ data }) => applySession(data.session))
+      .catch(() => {
+        if (active) setLoading(false);
+      });
+
+    // Failsafe: never leave the app stuck on the loading spinner.
+    const timeout = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 5000);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void applySession(session);
     });
-    return () => subscription.subscription.unsubscribe();
+
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, [loadProfile]);
 
   const refreshProfile = useCallback(async () => {
