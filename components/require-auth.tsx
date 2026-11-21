@@ -4,7 +4,9 @@ import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
+import { DbSetupGuide } from '@/components/db-setup-guide';
 import { Button } from '@/components/ui/button';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, profile, loading, refreshProfile } = useAuth();
@@ -33,6 +35,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
         <Button variant="outline" onClick={() => void refreshProfile()}>
           Try again
         </Button>
+        {!isSupabaseConfigured && <DbSetupGuide />}
       </div>
     );
   }

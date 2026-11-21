@@ -7,6 +7,7 @@ import { ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, AlertTriangle } from 'l
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DbSetupGuide } from '@/components/db-setup-guide';
 import { describeAuthError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase/client';
 import { collectFieldErrors, loginSchema, signUpSchema } from '@/lib/validation';
@@ -113,6 +114,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             <span>{formError}</span>
           </div>
         )}
+        {formError && formError.includes('database connection is not set up') && <DbSetupGuide />}
 
         {notice && (
           <div role="status" className="mb-5 flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
